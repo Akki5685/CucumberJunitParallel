@@ -1,3 +1,14 @@
+# Debug Mode Instructions
+
+This framework includes a debug mode that keeps the browser open when a test fails, allowing you to:
+1. Inspect the browser state
+2. Fix the code issue
+3. Continue execution from the point of failure
+
+## How to Enable Debug Mode
+
+### Option 1: Command Line
+Run tests with the debug mode system property:
 mvn clean test -Ddebug.mode=true -Dcucumber.filter.tags="@chrome"
 
 
