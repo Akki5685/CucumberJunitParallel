@@ -16,24 +16,19 @@ public class GoogleSearchSteps {
     private final GooglePage googlePage = new GooglePage();
 
     @Given("I am on the Google search page")
-    public void i_am_on_the_google_search_page(Scenario scenario) {
+    public void i_am_on_the_google_search_page() {
         try {
             googlePage.navigateToGoogle();
             ExtentReportLogger.logInfo("Navigated to Google search page");
         } catch (Exception e) {
             ExtentReportLogger.logFail("Failed to navigate to Google: " + e.getMessage());
 
-            // Pause execution if in debug mode
-            if (DebugManager.isDebugModeEnabled()) {
-                DebugManager.pauseOnFailure(scenario.getName(), "Navigate to Google", e.getMessage());
-            }
-
             throw e;
         }
     }
 
     @When("I search for {string}")
-    public void i_search_for(String searchTerm, Scenario scenario) {
+    public void i_search_for(String searchTerm) {
         try {
             ExtentReportLogger.logInfo("About to search for: " + searchTerm);
             googlePage.searchFor(searchTerm);
@@ -41,17 +36,13 @@ public class GoogleSearchSteps {
         } catch (Exception e) {
             ExtentReportLogger.logFail("Failed to search: " + e.getMessage());
 
-            // Pause execution if in debug mode
-            if (DebugManager.isDebugModeEnabled()) {
-                DebugManager.pauseOnFailure(scenario.getName(), "Search for " + searchTerm, e.getMessage());
-            }
 
             throw e;
         }
     }
 
     @Then("I should see search results")
-    public void i_should_see_search_results(Scenario scenario) {
+    public void i_should_see_search_results() {
         try {
             boolean resultsDisplayed = googlePage.areSearchResultsDisplayed();
 
@@ -62,20 +53,12 @@ public class GoogleSearchSteps {
                 ExtentReportLogger.logFail("Search results are not displayed");
                 ExtentReportLogger.addScreenshot(Status.FAIL, "Search results not displayed");
 
-                // Pause execution if in debug mode
-                if (DebugManager.isDebugModeEnabled()) {
-                    DebugManager.pauseOnFailure(scenario.getName(), "Verify search results", "Results not displayed");
-                }
 
                 throw new AssertionError("Search results are not displayed");
             }
         } catch (Exception e) {
             ExtentReportLogger.logFail("Failed to verify results: " + e.getMessage());
 
-            // Pause execution if in debug mode
-            if (DebugManager.isDebugModeEnabled()) {
-                DebugManager.pauseOnFailure(scenario.getName(), "Verify search results", e.getMessage());
-            }
 
             throw e;
         }

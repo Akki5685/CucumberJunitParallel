@@ -2,7 +2,6 @@ package com.example.hooks;
 
 import com.codeborne.selenide.Selenide;
 import com.example.config.DriverFactory;
-import com.example.utils.DebugManager;
 import com.example.utils.ExtentReportLogger;
 import io.cucumber.java.After;
 import io.cucumber.java.AfterStep;
@@ -14,24 +13,31 @@ public class Hooks {
 
     @Before
     public void setUp(Scenario scenario) {
-        // Check if debug mode is enabled via system property
-        if ("true".equalsIgnoreCase(System.getProperty("debug.mode"))) {
-            DebugManager.enableDebugMode();
+        // Get execution mode from cucumber.properties
+        String executionMode = getProperty("execution.mode", "local");
+        boolean isRemoteExecution = "lambdatest".equalsIgnoreCase(executionMode);
+
+        // Default configuration
+        String browser = getProperty("browser", "chrome");
+
+        if (isRemoteExecution) {
+            // LambdaTest configuration
+            String version = getProperty("browser.version", "latest");
+            String platform = getProperty("platform", "Windows 10");
+
+            // Get LambdaTest credentials - first from properties, then from system properties
+            String lambdaUsername = getProperty("lambdatest.username",
+                    System.getProperty("LT_USERNAME", "YOUR_LAMBDATEST_USERNAME"));
+            String lambdaAccessKey = getProperty("lambdatest.accesskey",
+                    System.getProperty("LT_ACCESS_KEY", "YOUR_LAMBDATEST_ACCESS_KEY"));
+
+            DriverFactory.setupRemoteDriver(browser, version, platform, lambdaUsername, lambdaAccessKey);
+            ExtentReportLogger.logInfo("Running test on LambdaTest with browser: " + browser);
+        } else {
+            // Local execution
+            DriverFactory.setupLocalDriver(browser);
+            ExtentReportLogger.logInfo("Running test locally with browser: " + browser);
         }
-
-        // Default configuration - can be customized based on tags or scenario names
-        String browser = "chrome";
-        String version = "latest";
-        String platform = "Windows 10";
-
-        // You can extract browser info from scenario tags if needed
-        if (scenario.getSourceTagNames().contains("@firefox")) {
-            browser = "firefox";
-        } else if (scenario.getSourceTagNames().contains("@edge")) {
-            browser = "MicrosoftEdge";
-        }
-
-        DriverFactory.setupDriver(browser, version, platform);
     }
 
     @AfterStep
@@ -47,22 +53,37 @@ public class Hooks {
 
     @After
     public void tearDown(Scenario scenario) {
-        // Only quit the driver if the scenario passed or debug mode is disabled
-        if (!scenario.isFailed() || !DebugManager.isDebugModeEnabled()) {
-            // Take final screenshot
-            byte[] screenshot = Selenide.screenshot(OutputType.BYTES);
-            scenario.attach(screenshot, "image/png", "Final Screenshot");
+        // Take final screenshot
+        byte[] screenshot = Selenide.screenshot(OutputType.BYTES);
+        scenario.attach(screenshot, "image/png", "Final Screenshot");
 
-            // Log scenario status
-            if (scenario.isFailed()) {
-                ExtentReportLogger.logFail("Scenario failed: " + scenario.getName());
-            } else {
-                ExtentReportLogger.logPass("Scenario passed: " + scenario.getName());
-            }
-
-            DriverFactory.quitDriver();
+        // Log scenario status
+        if (scenario.isFailed()) {
+            ExtentReportLogger.logFail("Scenario failed: " + scenario.getName());
         } else {
-            ExtentReportLogger.logInfo("Browser kept open for debugging. Close it manually when done.");
+            ExtentReportLogger.logPass("Scenario passed: " + scenario.getName());
         }
+
+        DriverFactory.quitDriver();
+    }
+
+    /**
+     * Gets a property value from system properties first, then from cucumber.properties
+     */
+    private String getProperty(String key, String defaultValue) {
+        // First check system properties (highest priority)
+        String value = System.getProperty(key);
+        if (value != null) {
+            return value;
+        }
+
+        // Then check cucumber.properties
+        value = io.cucumber.core.options.CucumberProperties.create().get(key);
+        if (value != null) {
+            return value;
+        }
+
+        // Return default if not found
+        return defaultValue;
     }
 }
