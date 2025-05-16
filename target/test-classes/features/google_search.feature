@@ -7,7 +7,7 @@ Feature: Google Search Functionality
 #    Then I should see search results
 
 
-  @chrome
+  @chrome1
   Scenario: Search for Selenide
     Given I am on the Google search page
     When I search for "Selenide testing framework"

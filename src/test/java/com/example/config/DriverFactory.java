@@ -13,8 +13,8 @@ import java.util.concurrent.Semaphore;
 
 public class DriverFactory {
 
-    private static final String LAMBDA_TEST_USERNAME = System.getProperty("LT_USERNAME", "YOUR_LAMBDATEST_USERNAME");
-    private static final String LAMBDA_TEST_ACCESS_KEY = System.getProperty("LT_ACCESS_KEY", "YOUR_LAMBDATEST_ACCESS_KEY");
+    private static final String LAMBDA_TEST_USERNAME = System.getProperty("LT_USERNAME", "akhil20495");
+    private static final String LAMBDA_TEST_ACCESS_KEY = System.getProperty("LT_ACCESS_KEY", "LT_pW53j2Au3I7O0QkVwEKeGLGKRlsyJpZ7QbD6RCYZzl2DTJC");
     private static final String LAMBDA_TEST_HUB_URL = "https://" + LAMBDA_TEST_USERNAME + ":" + LAMBDA_TEST_ACCESS_KEY + "@hub.lambdatest.com/wd/hub";
     private static final String BUILD_NAME = System.getProperty("build.name", "Cucumber-JUnit5-Selenide-Parallel");
 
@@ -74,7 +74,7 @@ public class DriverFactory {
 
             // Configure Selenide
             Configuration.timeout = 10000;
-            Configuration.screenshots = true;
+            Configuration.screenshots = false;
             Configuration.savePageSource = false;
 
         } catch (Exception e) {

@@ -9,6 +9,8 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
+
+        <maven.build.timestamp.format>yyyy-MM-dd-HH-mm-ss</maven.build.timestamp.format>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <cucumber.version>7.11.0</cucumber.version>
@@ -94,6 +96,9 @@
                 <version>3.0.0-M8</version>
                 <configuration>
                     <systemPropertyVariables>
+                        <selenide.screenshots>false</selenide.screenshots>
+                    <selenide.savePageSource>false</selenide.savePageSource>
+                        <cucumber.plugin>pretty, html:build/reports/tests/report-${maven.build.timestamp}.html, rerun:target/failedrerun.txt</cucumber.plugin>
                         <!-- Pass Maven properties to system properties -->
                         <cucumber.execution.parallel.config.fixed.parallelism>${parallel.count}</cucumber.execution.parallel.config.fixed.parallelism>
                         <cucumber.execution.parallel.config.fixed.max-pool-size>${parallel.count}</cucumber.execution.parallel.config.fixed.max-pool-size>
@@ -112,18 +117,6 @@
             <id>chrome</id>
             <properties>
                 <browser>chrome</browser>
-            </properties>
-        </profile>
-        <profile>
-            <id>firefox</id>
-            <properties>
-                <browser>firefox</browser>
-            </properties>
-        </profile>
-        <profile>
-            <id>edge</id>
-            <properties>
-                <browser>MicrosoftEdge</browser>
             </properties>
         </profile>
     </profiles>
