@@ -1,34 +1,34 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>CucumberJunitParallel</artifactId>
+    <artifactId>cucumber-junit5-parallel</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-
-            <maven.build.timestamp.format>yyyy-MM-dd-HH-mm-ss</maven.build.timestamp.format>
-
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <cucumber.version>7.15.0</cucumber.version>
-        <junit.jupiter.version>5.9.2</junit.jupiter.version>
+        <cucumber.version>7.11.0</cucumber.version>
+        <junit.version>5.9.2</junit.version>
         <selenide.version>6.12.3</selenide.version>
-
-        <!-- Add these default values -->
-        <threadcount>1</threadcount>
-        <parallel.enabled>true</parallel.enabled>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Default values for execution parameters -->
+        <parallel.count>4</parallel.count>
+        <browser>chrome</browser>
+        <version>latest</version>
+        <platform>Windows 10</platform>
+        <build.name>Cucumber-JUnit5-Selenide-Parallel</build.name>
     </properties>
 
     <dependencies>
-        <!-- Cucumber -->
+        <!-- Cucumber Dependencies -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
             <version>${cucumber.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
@@ -36,18 +36,24 @@
             <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-picocontainer</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
 
-        <!-- JUnit 5 -->
+        <!-- JUnit 5 Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit.jupiter.version}</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.0</version>
+            <version>1.9.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -56,15 +62,18 @@
             <groupId>com.codeborne</groupId>
             <artifactId>selenide</artifactId>
             <version>${selenide.version}</version>
-            <scope>test</scope>
         </dependency>
 
-        <!-- SLF4J Implementation -->
+        <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>slf4j-api</artifactId>
             <version>2.0.6</version>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.5</version>
         </dependency>
     </dependencies>
 
@@ -74,68 +83,48 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M9</version>
+                <version>3.0.0-M8</version>
                 <configuration>
-                    <includes>
-                        <include>**/*CucumberTest.java</include>
-                    </includes>
-                    <testFailureIgnore>true</testFailureIgnore>
                     <systemPropertyVariables>
-                        <!-- Cucumber plugin configuration -->
-                        <cucumber.plugin>pretty, html:build/reports/tests/report-${maven.build.timestamp}.html, rerun:target/failedrerun.txt</cucumber.plugin>
-
-                        <!-- Selenide configuration -->
-                        <selenide.screenshots>true</selenide.screenshots>
-                        <selenide.savePageSource>false</selenide.savePageSource>
-                        <selenide.reportsFolder>build/reports/tests/screenshots</selenide.reportsFolder>
-
-                        <!-- Pass the thread count directly -->
-                        <cucumber.execution.parallel.config.fixed.parallelism>${threadcount}</cucumber.execution.parallel.config.fixed.parallelism>
+                        <!-- Pass Maven properties to system properties -->
+                        <cucumber.execution.parallel.config.fixed.parallelism>${parallel.count}</cucumber.execution.parallel.config.fixed.parallelism>
+                        <cucumber.execution.parallel.config.fixed.max-pool-size>${parallel.count}</cucumber.execution.parallel.config.fixed.max-pool-size>
+                        <browser>${browser}</browser>
+                        <version>${version}</version>
+                        <platform>${platform}</platform>
+                        <build.name>${build.name}</build.name>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-
-            <!-- Add the Cucumber reporting plugin -->
-
         </plugins>
     </build>
+
     <profiles>
         <profile>
-            <id>sequential</id>
+            <id>chrome</id>
             <properties>
-                <parallel.enabled>false</parallel.enabled>
-                <threadcount>1</threadcount>
+                <browser>chrome</browser>
             </properties>
         </profile>
         <profile>
-            <id>parallel</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+            <id>firefox</id>
             <properties>
-                <parallel.enabled>true</parallel.enabled>
-                <threadcount>2</threadcount>
-                <!-- Add these explicit properties -->
-                <cucumber.execution.parallel.enabled>true</cucumber.execution.parallel.enabled>
-                <cucumber.execution.parallel.config.strategy>fixed</cucumber.execution.parallel.config.strategy>
-                <cucumber.execution.parallel.config.fixed.parallelism>2</cucumber.execution.parallel.config.fixed.parallelism>
+                <browser>firefox</browser>
             </properties>
         </profile>
-        <!-- Add a new profile for custom thread count -->
         <profile>
-            <id>custom-threads</id>
+            <id>edge</id>
             <properties>
-                <parallel.enabled>true</parallel.enabled>
-                <cucumber.execution.parallel.enabled>true</cucumber.execution.parallel.enabled>
-                <cucumber.execution.parallel.config.strategy>fixed</cucumber.execution.parallel.config.strategy>
-                <!-- This will be overridden by -Dthreadcount -->
-                <threadcount>2</threadcount>
+                <browser>MicrosoftEdge</browser>
             </properties>
         </profile>
     </profiles>
-
 </project>

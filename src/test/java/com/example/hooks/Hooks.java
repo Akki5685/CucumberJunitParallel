@@ -1,58 +1,50 @@
 package com.example.hooks;
 
-import com.codeborne.selenide.Selenide;
-import com.codeborne.selenide.WebDriverRunner;
 import com.example.config.DriverFactory;
 import io.cucumber.java.After;
-import io.cucumber.java.AfterStep;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
-
-import java.io.File;
-import java.nio.file.Files;
 
 public class Hooks {
 
     @Before
     public void setUp(Scenario scenario) {
-        // Default configuration - can be customized based on tags or scenario names
-        String browser = "chrome";
-        String version = "latest";
-        String platform = "Windows 10";
+        System.out.println("Starting scenario: " + scenario.getName() + " on thread " + Thread.currentThread().getId());
 
-        // You can extract browser info from scenario tags if needed
+        // Get browser parameters from system properties or default values
+        String browser = System.getProperty("browser", "chrome");
+        String version = System.getProperty("version", "latest");
+        String platform = System.getProperty("platform", "Windows 10");
+
+        // Override browser based on scenario tags if needed
         if (scenario.getSourceTagNames().contains("@firefox")) {
             browser = "firefox";
         } else if (scenario.getSourceTagNames().contains("@edge")) {
             browser = "MicrosoftEdge";
         }
 
-        DriverFactory.setupDriver(browser, version, platform);
+        // Set up driver with scenario name for better reporting
+        DriverFactory.setupDriver(browser, version, platform, scenario.getName());
     }
-
-    @AfterStep
-    public void afterStep(Scenario scenario) {
-        if (scenario.isFailed()) {
-
-
-                try {
-                    // Get the raw screenshot from the WebDriver
-                    byte[] screenshot = ((TakesScreenshot) WebDriverRunner.getWebDriver()).getScreenshotAs(OutputType.BYTES);
-                    scenario.attach(screenshot, "image/png", "Screenshot of failure (alternative method)");
-                    System.out.println("Screenshot taken with alternative method");
-                } catch (Exception ex) {
-                    System.err.println("Alternative screenshot method also failed: " + ex.getMessage());
-                    ex.printStackTrace();
-                }
-            }
-        }
-
 
     @After
     public void tearDown(Scenario scenario) {
-        DriverFactory.quitDriver();
+        try {
+            // Take screenshot if scenario failed
+            if (scenario.isFailed() && DriverFactory.getDriver() instanceof TakesScreenshot) {
+                byte[] screenshot = ((TakesScreenshot) DriverFactory.getDriver()).getScreenshotAs(OutputType.BYTES);
+                scenario.attach(screenshot, "image/png", scenario.getName() + "_failure");
+            }
+
+            // Set test status on LambdaTest
+            DriverFactory.setTestStatus(!scenario.isFailed());
+
+        } finally {
+            // Always quit the driver
+            DriverFactory.quitDriver();
+            System.out.println("Finished scenario: " + scenario.getName() + " on thread " + Thread.currentThread().getId());
+        }
     }
 }
