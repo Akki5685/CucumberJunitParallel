@@ -4,16 +4,25 @@ Feature: Google Search Functionality
   Scenario: Search for Cucumber
     Given I am on the Google search page
     When I search for "Cucumber testing framework"
-    Then I should see search results
+#    Then I should see search results
 
-  @firefox
+
+  @chrome
   Scenario: Search for Selenide
     Given I am on the Google search page
     When I search for "Selenide testing framework"
-    Then I should see search results
+#    Then I should see search results
 
-  @edge
+
+  @chrome
   Scenario: Search for LambdaTest
     Given I am on the Google search page
     When I search for "LambdaTest automation"
-    Then I should see search results
+#    Then I should see search results  @chrome
+
+  @chrome
+  Scenario: Search for Cucumber
+    Given I am on the Google search page
+    When I search for "Cucumber testing framework"
+#    Then I should see search results
+

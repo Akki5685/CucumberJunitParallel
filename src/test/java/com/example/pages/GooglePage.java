@@ -2,13 +2,14 @@ package com.example.pages;
 
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
+import org.openqa.selenium.By;
 
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 
 public class GooglePage {
 
-    private final SelenideElement searchBox = $("input[name='q']");
+    private final SelenideElement searchBox = $(By.xpath("//textArea[@aria-label='Search']"));
     private final SelenideElement searchButton = $("input[name='btnK']");
     private final SelenideElement resultsStats = $("#result-stats");
 

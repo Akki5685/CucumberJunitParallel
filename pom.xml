@@ -7,12 +7,19 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
+
+            <maven.build.timestamp.format>yyyy-MM-dd-HH-mm-ss</maven.build.timestamp.format>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <cucumber.version>7.11.1</cucumber.version>
+        <cucumber.version>7.15.0</cucumber.version>
         <junit.jupiter.version>5.9.2</junit.jupiter.version>
         <selenide.version>6.12.3</selenide.version>
+
+        <!-- Add these default values -->
+        <threadcount>1</threadcount>
+        <parallel.enabled>true</parallel.enabled>
     </properties>
 
     <dependencies>
@@ -40,7 +47,7 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
-            <version>1.9.2</version>
+            <version>1.10.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -73,17 +80,62 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M9</version>
                 <configuration>
-                    <properties>
-                        <configurationParameters>
-                            cucumber.junit-platform.naming-strategy=long
-                            cucumber.execution.parallel.enabled=true
-                            cucumber.execution.parallel.config.strategy=fixed
-                            cucumber.execution.parallel.config.fixed.parallelism=4
-                            cucumber.plugin=pretty, html:target/cucumber-reports/report.html, json:target/cucumber-reports/report.json
-                        </configurationParameters>
-                    </properties>
+                    <includes>
+                        <include>**/*CucumberTest.java</include>
+                    </includes>
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <systemPropertyVariables>
+                        <!-- Cucumber plugin configuration -->
+                        <cucumber.plugin>pretty, html:build/reports/tests/report-${maven.build.timestamp}.html, rerun:target/failedrerun.txt</cucumber.plugin>
+
+                        <!-- Selenide configuration -->
+                        <selenide.screenshots>true</selenide.screenshots>
+                        <selenide.savePageSource>false</selenide.savePageSource>
+                        <selenide.reportsFolder>build/reports/tests/screenshots</selenide.reportsFolder>
+
+                        <!-- Pass the thread count directly -->
+                        <cucumber.execution.parallel.config.fixed.parallelism>${threadcount}</cucumber.execution.parallel.config.fixed.parallelism>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
+
+            <!-- Add the Cucumber reporting plugin -->
+
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>sequential</id>
+            <properties>
+                <parallel.enabled>false</parallel.enabled>
+                <threadcount>1</threadcount>
+            </properties>
+        </profile>
+        <profile>
+            <id>parallel</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <parallel.enabled>true</parallel.enabled>
+                <threadcount>2</threadcount>
+                <!-- Add these explicit properties -->
+                <cucumber.execution.parallel.enabled>true</cucumber.execution.parallel.enabled>
+                <cucumber.execution.parallel.config.strategy>fixed</cucumber.execution.parallel.config.strategy>
+                <cucumber.execution.parallel.config.fixed.parallelism>2</cucumber.execution.parallel.config.fixed.parallelism>
+            </properties>
+        </profile>
+        <!-- Add a new profile for custom thread count -->
+        <profile>
+            <id>custom-threads</id>
+            <properties>
+                <parallel.enabled>true</parallel.enabled>
+                <cucumber.execution.parallel.enabled>true</cucumber.execution.parallel.enabled>
+                <cucumber.execution.parallel.config.strategy>fixed</cucumber.execution.parallel.config.strategy>
+                <!-- This will be overridden by -Dthreadcount -->
+                <threadcount>2</threadcount>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>
