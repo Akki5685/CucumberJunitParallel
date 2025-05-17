@@ -1,4 +1,5 @@
 D:\CucumberJunitParallel\src\test\java\com\example\stepdefs\GoogleSearchSteps.java
+D:\CucumberJunitParallel\src\test\java\com\example\runners\RerunFailedCucumberTests.java
 D:\CucumberJunitParallel\src\test\java\com\example\config\DriverFactory.java
 D:\CucumberJunitParallel\src\test\java\com\example\runners\CucumberTest.java
 D:\CucumberJunitParallel\src\test\java\com\example\pages\GooglePage.java

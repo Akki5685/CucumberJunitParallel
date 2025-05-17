@@ -1,0 +1,20 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- Set specific loggers to higher levels if needed -->
+    <logger name="org.openqa.selenium" level="WARN"/>
+    <logger name="io.netty" level="ERROR"/>
+    <logger name="org.asynchttpclient" level="ERROR"/>
+    <logger name="com.codeborne.selenide" level="WARN"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
