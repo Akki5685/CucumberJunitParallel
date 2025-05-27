@@ -2,11 +2,14 @@ package com.example.config;
 
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.WebDriverRunner;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -25,28 +28,38 @@ public class DriverFactory {
     // Semaphore for controlling concurrent sessions
     private static Semaphore semaphore;
 
+    // ExtentReports related
+    private static ExtentReports extentReports;
+    private static ExtentSparkReporter sparkReporter;
+
+    // ThreadLocal for ExtentTest to support parallel tests
+    private static final ThreadLocal<ExtentTest> extentTestThreadLocal = new ThreadLocal<>();
+
     static {
-        // Initialize semaphore with parallel count from system property
         int parallelCount = Integer.parseInt(System.getProperty(
                 "cucumber.execution.parallel.config.fixed.parallelism", "4"));
         semaphore = new Semaphore(parallelCount);
 
         System.out.println("Initialized thread pool with " + parallelCount + " concurrent sessions");
+
+        // Initialize ExtentReports once
+        sparkReporter = new ExtentSparkReporter("target/extent-report.html");
+        sparkReporter.config().setReportName("LambdaTest Parallel Execution Report");
+        sparkReporter.config().setDocumentTitle("Test Execution Report");
+
+        extentReports = new ExtentReports();
+        extentReports.attachReporter(sparkReporter);
+
+        // You can add system info if needed
+        extentReports.setSystemInfo("Build", BUILD_NAME);
+        extentReports.setSystemInfo("Environment", "LambdaTest");
     }
 
     /**
      * Set up WebDriver with browser configuration
      */
-    public static void setupDriver(String browser, String version, String platform) {
-        setupDriver(browser, version, platform, Thread.currentThread().getName());
-    }
-
-    /**
-     * Set up WebDriver with browser configuration and specific test name
-     */
     public static void setupDriver(String browser, String version, String platform, String testName) {
         try {
-            // Acquire permit (will block if max threads reached)
             semaphore.acquire();
             System.out.println("Thread acquired: " + Thread.currentThread().getId() +
                     " (Available permits: " + semaphore.availablePermits() + ")");
@@ -62,23 +75,22 @@ public class DriverFactory {
             capabilities.setCapability("network", true);
             capabilities.setCapability("console", true);
 
-            // Create RemoteWebDriver
             WebDriver driver = new RemoteWebDriver(new URL(LAMBDA_TEST_HUB_URL), capabilities);
 
-            // Store in ThreadLocal and map for tracking
             driverThreadLocal.set(driver);
             driverMap.put(Thread.currentThread().getId(), driver);
 
-            // Set driver for Selenide
             WebDriverRunner.setWebDriver(driver);
 
-            // Configure Selenide
             Configuration.timeout = 10000;
             Configuration.screenshots = false;
             Configuration.savePageSource = false;
 
+            // Create ExtentTest instance for this thread/test
+            ExtentTest test = extentReports.createTest(testName);
+            extentTestThreadLocal.set(test);
+
         } catch (Exception e) {
-            // Release permit if setup fails
             semaphore.release();
             throw new RuntimeException("Error setting up LambdaTest driver", e);
         }
@@ -92,25 +104,43 @@ public class DriverFactory {
     }
 
     /**
-     * Quit the WebDriver for the current thread
+     * Get ExtentTest for current thread
      */
-    public static void quitDriver() {
+    public static ExtentTest getExtentTest() {
+        return extentTestThreadLocal.get();
+    }
+
+    /**
+     * Quit the WebDriver for the current thread and log test status to ExtentReports
+     */
+    public static void quitDriver(boolean testPassed) {
         WebDriver driver = driverThreadLocal.get();
+        ExtentTest test = extentTestThreadLocal.get();
+
         if (driver != null) {
             try {
-                // Close Selenide's WebDriver if it's the same as our ThreadLocal driver
+                if (testPassed) {
+                    test.pass("Test passed");
+                } else {
+                    test.fail("Test failed");
+                    // Optionally add screenshot on failure
+                    // String screenshotPath = captureScreenshot();
+                    // test.addScreenCaptureFromPath(screenshotPath);
+                }
+
                 if (WebDriverRunner.hasWebDriverStarted() &&
                         WebDriverRunner.getWebDriver() == driver) {
                     WebDriverRunner.closeWindow();
                 } else {
                     driver.quit();
                 }
+            } catch (Exception e) {
+                test.warning("Exception during driver quit: " + e.getMessage());
             } finally {
-                // Clean up ThreadLocal and map
                 driverThreadLocal.remove();
                 driverMap.remove(Thread.currentThread().getId());
+                extentTestThreadLocal.remove();
 
-                // Release the permit
                 semaphore.release();
                 System.out.println("Thread released: " + Thread.currentThread().getId() +
                         " (Available permits: " + semaphore.availablePermits() + ")");
@@ -118,43 +148,23 @@ public class DriverFactory {
         }
     }
 
-    /**
-     * Quit all WebDrivers across all threads
-     */
-    public static void quitAllDrivers() {
-        driverMap.forEach((threadId, driver) -> {
-            if (driver != null) {
-                driver.quit();
-            }
-        });
-        driverMap.clear();
-        driverThreadLocal.remove();
-
-        // Also close Selenide's WebDriver if it's still open
-        if (WebDriverRunner.hasWebDriverStarted()) {
-            WebDriverRunner.closeWindow();
-        }
-    }
-
-    /**
-     * Set test status on LambdaTest (pass/fail)
-     */
-    /**
-     * Set test status on LambdaTest (pass/fail)
-     */
     public static void setTestStatus(boolean passed) {
         if (WebDriverRunner.hasWebDriverStarted()) {
             try {
                 String status = passed ? "passed" : "failed";
                 String script = "lambda-status=" + status;
 
-                // Cast WebDriver to JavascriptExecutor before calling executeScript
-                ((org.openqa.selenium.JavascriptExecutor) WebDriverRunner.getWebDriver())
-                        .executeScript(script);
-
+                ((JavascriptExecutor) WebDriverRunner.getWebDriver()).executeScript(script);
             } catch (Exception e) {
                 System.err.println("Failed to set test status on LambdaTest: " + e.getMessage());
             }
+        }
+    }
+
+
+    public static void flushReports() {
+        if (extentReports != null) {
+            extentReports.flush();
         }
     }
 }

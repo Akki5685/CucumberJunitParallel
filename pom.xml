@@ -65,7 +65,17 @@
             <artifactId>selenide</artifactId>
             <version>${selenide.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.aventstack</groupId>
+            <artifactId>extentreports</artifactId>
+            <version>5.0.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.28</version> <!-- or latest -->
+            <scope>provided</scope>
+        </dependency>
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -81,6 +91,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -108,6 +119,11 @@
                         <build.name>${build.name}</build.name>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
             </plugin>
         </plugins>
     </build>
